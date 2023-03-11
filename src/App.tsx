@@ -1,16 +1,28 @@
-import { useState } from "react";
-import reactLogo from "./assets/react.svg";
-import { invoke } from "@tauri-apps/api/tauri";
-import "./App.css";
+import { useEffect, useState } from 'react'
+import reactLogo from './assets/react.svg'
+import { invoke } from '@tauri-apps/api/tauri'
+import { appWindow } from '@tauri-apps/api/window'
+import './App.css'
 
 function App() {
-  const [greetMsg, setGreetMsg] = useState("");
-  const [name, setName] = useState("");
+  const [greetMsg, setGreetMsg] = useState('')
+  const [name, setName] = useState('')
 
   async function greet() {
     // Learn more about Tauri commands at https://tauri.app/v1/guides/features/command
-    setGreetMsg(await invoke("greet", { name }));
+    setGreetMsg(await invoke('greet', { name }))
   }
+
+  const listen = async () => {
+    console.log('listening')
+    await appWindow.listen('event-name', ({ event, payload }) =>
+      console.log(payload)
+    )
+  }
+
+  useEffect(() => {
+    listen()
+  }, [])
 
   return (
     <div className="container">
@@ -33,8 +45,8 @@ function App() {
       <div className="row">
         <form
           onSubmit={(e) => {
-            e.preventDefault();
-            greet();
+            e.preventDefault()
+            greet()
           }}
         >
           <input
@@ -47,7 +59,7 @@ function App() {
       </div>
       <p>{greetMsg}</p>
     </div>
-  );
+  )
 }
 
-export default App;
+export default App
