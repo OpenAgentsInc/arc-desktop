@@ -1,8 +1,8 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use serde_json::Value;
 use std::str::FromStr;
 use std::time::Duration;
-use tauri::{Manager, Window};
 
 use nostr_sdk::prelude::*;
 use tokio::time;
@@ -41,11 +41,13 @@ async fn main() -> Result<()> {
     let event_id = client.publish_text_note(message, &[]).await?;
     println!("{}", event_id);
 
-    // Retrieve all the events that we have posted
+    // Retrieve a maximum of 25 kind-0 events from the relays
     let filter = Filter {
-        ids: None,
-        authors: Some(vec![my_keys.public_key()]),
-        kinds: None,
+        ids: Some(vec![
+            "2837654f9543106a5ea3a74d24308d3317a4bc2d9ebd1fd1bcb7781e2d1c3cd2".to_string(),
+        ]),
+        authors: None,
+        kinds: Some(vec![Kind::Ephemeral(0)]),
         events: None,
         pubkeys: None,
         hashtags: None,
@@ -53,7 +55,7 @@ async fn main() -> Result<()> {
         search: None,
         since: None,
         until: None,
-        limit: None,
+        limit: Some(1),
     };
 
     time::sleep(Duration::from_secs(1)).await;
@@ -61,33 +63,13 @@ async fn main() -> Result<()> {
     let events = client.get_events_of(vec![filter], None).await?;
     println!("{:#?}", events);
 
-    // window.emit("events", events).unwrap();
+    for event in events.iter() {
+        let content: Value = serde_json::from_str(&event.content)?;
+        let lud16 = content["lud16"].as_str().unwrap_or("");
+        println!("{}", lud16);
+    }
 
     tauri::Builder::default()
-        .setup(|app| {
-            // `main` here is the window label; it is defined on the window creation or under `tauri.conf.json`
-            // the default value is `main`. note that it must be unique
-            let main_window = app.get_window("main").unwrap();
-
-            // listen to the `event-name` (emitted on the `main` window)
-            let id = main_window.listen("event-name", |event| {
-                println!("got window event-name with payload {:?}", event.payload());
-            });
-            // unlisten to the event using the `id` returned on the `listen` function
-            // an `once` API is also exposed on the `Window` struct
-            main_window.unlisten(id);
-
-            // emit the `event-name` event to the `main` window
-            main_window
-                .emit(
-                    "event-name",
-                    Payload {
-                        message: "Tauri is cool!!!!!!".into(),
-                    },
-                )
-                .unwrap();
-            Ok(())
-        })
         .invoke_handler(tauri::generate_handler![greet])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
