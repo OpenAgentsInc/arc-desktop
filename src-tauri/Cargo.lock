@@ -62,12 +62,14 @@ checksum = "224afbd727c3d6e4b90103ece64b8d1b67fbb1973b1046c2281eed3f3803f800"
 name = "arc-desktop"
 version = "0.0.0"
 dependencies = [
+ "lnurl",
  "nostr-sdk",
  "serde",
  "serde_json",
  "tauri",
  "tauri-build",
  "tokio",
+ "urlencoding",
 ]
 
 [[package]]
@@ -1487,6 +1489,16 @@ name = "linux-raw-sys"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f051f77a7c8e6957c0696eac88f26b0117e54f52d3fc682ab19397a8812846a4"
+
+[[package]]
+name = "lnurl"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3b4e9a8f57112a029f5bfca3019adf5fc329a36e8cc323b52faed6da98dfec96"
+dependencies = [
+ "serde",
+ "serde_json",
+]
 
 [[package]]
 name = "lock_api"
@@ -3483,6 +3495,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e8db7427f936968176eaa7cdf81b7f98b980b18495ec28f1b5791ac3bfe3eea9"
 
 [[package]]
 name = "utf-8"

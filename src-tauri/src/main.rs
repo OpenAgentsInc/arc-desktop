@@ -1,16 +1,49 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use nostr_sdk::prelude::*;
 use serde_json::Value;
 use std::str::FromStr;
 use std::time::Duration;
-
-use nostr_sdk::prelude::*;
 use tokio::time;
+use urlencoding;
 
 // the payload type must implement `Serialize` and `Clone`.
 #[derive(Clone, serde::Serialize)]
 struct Payload {
     message: String,
+}
+
+fn build_lnurl_pay_url(
+    service_url: &str,
+    amount: Option<u64>,
+    metadata: &[Vec<serde_json::Value>],
+    callback: Option<&str>,
+) -> String {
+    // Create a new builder.
+    let mut builder = String::from(service_url);
+    builder.push_str("?tag=payRequest");
+
+    // Set the amount, if it's specified.
+    if let Some(amount) = amount {
+        builder.push_str("&maxSendable=");
+        builder.push_str(&amount.to_string());
+        builder.push_str("&minSendable=");
+        builder.push_str(&amount.to_string());
+    }
+
+    // Set the metadata.
+    builder.push_str("&metadata=");
+    builder.push_str(&urlencoding::encode(
+        &serde_json::to_string(metadata).unwrap(),
+    ));
+
+    // Set the callback, if it's specified.
+    if let Some(callback) = callback {
+        builder.push_str("&callback=");
+        builder.push_str(callback);
+    }
+
+    builder
 }
 
 const PRIVATE_KEY: &str = "4540484eedb0bc5ba1209cea76ff7b6a77fee473708b113eac726058580267ad";
@@ -27,7 +60,7 @@ async fn main() -> Result<()> {
 
     let opts = Options::new().wait_for_send(true);
     let client = Client::new_with_opts(&my_keys, opts);
-    client.add_relay("wss://relay.damus.io", None).await?;
+    // client.add_relay("wss://relay.damus.io", None).await?;
     client.add_relay("wss://arc1.arcadelabs.co", None).await?;
     client.connect().await;
 
@@ -57,6 +90,23 @@ async fn main() -> Result<()> {
         let content: Value = serde_json::from_str(&event.content)?;
         let lud16 = content["lud16"].as_str().unwrap_or("");
         println!("{}", lud16);
+
+        let metadata = vec![vec![
+            serde_json::Value::String(String::from("text/plain")),
+            serde_json::Value::String(String::from("Test payment")),
+        ]];
+
+        let pay_url = build_lnurl_pay_url(
+            lud16,
+            Some(10000),
+            &[vec![
+                serde_json::json!("text/plain"),
+                serde_json::json!("Test payment"),
+            ]],
+            Some("https://example.com/payments/callback"),
+        );
+
+        println!("Pay URL: {}", pay_url);
     }
 
     tauri::Builder::default()
